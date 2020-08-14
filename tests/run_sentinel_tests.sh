@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 cd /django-redis-sentinel/tests/
 
-# Django 220
-echo "<<<< Testing Django220 >>>"
+# Django 3
+echo "<<<< Testing Django3 >>>"
 alias python=python
 echo "Switched to PY3K"
-pip install -U 'Django>=2.2,<2.3'
+pip install -U 'Django>=3.1,<3.2'
 python runtests-sentinel.py
 
-echo "End of testing PY3K, Django>=2.2"
+echo "End of testing PY3K, Django>=3.1"
