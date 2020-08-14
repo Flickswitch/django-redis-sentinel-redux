@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from django.utils.module_loading import import_string
 from django_redis.cache import RedisCache
@@ -20,5 +22,15 @@ class RedisSentinelCache(RedisCache):
         self._client_cls = import_string(self._client_cls)
         self._client = None
 
-        django_redis_ignore_exceptions = getattr(settings, 'DJANGO_REDIS_IGNORE_EXCEPTIONS', False)
-        self._ignore_exceptions = options.get('IGNORE_EXCEPTIONS', django_redis_ignore_exceptions)
+        self._ignore_exceptions = options.get(
+            'IGNORE_EXCEPTIONS',
+            getattr(settings, 'DJANGO_REDIS_IGNORE_EXCEPTIONS', False),
+        )
+        self._log_ignored_exceptions = getattr(
+            settings, 'DJANGO_REDIS_LOG_IGNORED_EXCEPTIONS', False
+        )
+        self.logger = (
+            logging.getLogger(getattr(settings, 'DJANGO_REDIS_LOGGER', __name__))
+            if self._log_ignored_exceptions
+            else None
+        )

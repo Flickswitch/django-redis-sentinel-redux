@@ -84,9 +84,14 @@ class SentinelClient(DefaultClient):
         If write then it looks for master
         """
         if write:
-            return self.connect(master=True)
+            connection = self.connect(master=True)
         else:
-            return self.connect(master=False, force_slave=force_slave)
+            connection = self.connect(master=False, force_slave=force_slave)
+
+        if show_index:
+            return connection, 0
+
+        return connection
 
     def connect(self, master=True, force_slave=False):
         """
