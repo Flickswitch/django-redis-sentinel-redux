@@ -2,8 +2,8 @@ import socket
 
 from django.core.cache.backends.base import get_key_func
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.module_loading import import_string
 from django_redis.client.default import DefaultClient
-from django_redis.util import load_class
 from redis.exceptions import ConnectionError
 
 from django_redis_sentinel import pool
@@ -55,13 +55,13 @@ class SentinelClient(DefaultClient):
             'SERIALIZER',
             'django_redis.serializers.pickle.PickleSerializer',
         )
-        serializer_cls = load_class(serializer_path)
+        serializer_cls = import_string(serializer_path)
 
         compressor_path = self._options.get(
             'COMPRESSOR',
             'django_redis.compressors.identity.IdentityCompressor',
         )
-        compressor_cls = load_class(compressor_path)
+        compressor_cls = import_string(compressor_path)
 
         self._serializer = serializer_cls(options=self._options)
         self._compressor = compressor_cls(options=self._options)
@@ -71,7 +71,7 @@ class SentinelClient(DefaultClient):
         # Create connection factory for Sentinels
         self.connection_factory = pool.get_connection_factory(options=self._options)
 
-    def get_client(self, write=True, force_slave=False):
+    def get_client(self, write=True, tried=(), show_index=False, force_slave=False):
         """
         Method used for obtain a raw redis client.
 
