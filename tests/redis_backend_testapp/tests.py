@@ -7,11 +7,10 @@ import unittest
 from django import VERSION
 from django.conf import settings
 from django.core.cache import cache
-from django.test import TestCase
+from django.test import override_settings, TestCase
 from django_redis.serializers import json as json_serializer, msgpack as msgpack_serializer
 
 from django_redis_sentinel import pool
-import django_redis_sentinel.cache
 from django_redis_sentinel.client.sentinel import SentinelClient
 
 FAKE_REDIS = (
@@ -572,19 +571,14 @@ class DjangoRedisCacheTests(TestCase):
         pass
 
 
-import django_redis_sentinel.cache
-
-
+@override_settings(DJANGO_REDIS_IGNORE_EXCEPTIONS=True)
 class DjangoOmitExceptionsTests(TestCase):
     def setUp(self):
-        self._orig_setting = django_redis_sentinel.cache.DJANGO_REDIS_IGNORE_EXCEPTIONS
-        django_redis_sentinel.cache.DJANGO_REDIS_IGNORE_EXCEPTIONS = True
         self.cache = caches['doesnotexist']
         self.cache._orig_ignore_exceptions = self.cache._ignore_exceptions
         self.cache._ignore_exceptions = True
 
     def tearDown(self):
-        django_redis_sentinel.cache.DJANGO_REDIS_IGNORE_EXCEPTIONS = self._orig_setting
         self.cache._ignore_exceptions = self.cache._orig_ignore_exceptions
 
     def test_get_many_returns_default_arg(self):
@@ -600,8 +594,7 @@ from django.contrib.sessions.backends.cache import SessionStore as CacheSession
 
 from django.core.cache import caches
 from django.test import override_settings
-from django.test.utils import patch_logger
-from django.utils import six, timezone
+from django.utils import timezone
 
 
 class SessionTestsMixin(object):
@@ -681,7 +674,7 @@ class SessionTestsMixin(object):
         self.session['x'] = 1
         self.session.modified = False
         self.session.accessed = False
-        i = six.iterkeys(self.session)
+        i = self.session.keys()
         self.assertTrue(hasattr(i, '__iter__'))
         self.assertTrue(self.session.accessed)
         self.assertFalse(self.session.modified)
@@ -691,7 +684,7 @@ class SessionTestsMixin(object):
         self.session['x'] = 1
         self.session.modified = False
         self.session.accessed = False
-        i = six.itervalues(self.session)
+        i = self.session.values()
         self.assertTrue(hasattr(i, '__iter__'))
         self.assertTrue(self.session.accessed)
         self.assertFalse(self.session.modified)
@@ -701,7 +694,7 @@ class SessionTestsMixin(object):
         self.session['x'] = 1
         self.session.modified = False
         self.session.accessed = False
-        i = six.iteritems(self.session)
+        i = self.session.items()
         self.assertTrue(hasattr(i, '__iter__'))
         self.assertTrue(self.session.accessed)
         self.assertFalse(self.session.modified)
@@ -888,7 +881,7 @@ class SessionTestsMixin(object):
         # Has to be a string - see https://github.com/django/django/pull/10470
         bad_encode = bad_encode.decode('ascii')
 
-        with patch_logger('django.security.SuspiciousSession', 'warning') as calls:
+        with self.assertLogs('django.security.SuspiciousSession', 'warning') as calls:
             self.assertEqual({}, self.session.decode(bad_encode))
             # check that the failed decode is logged
             self.assertEqual(len(calls), 1)
